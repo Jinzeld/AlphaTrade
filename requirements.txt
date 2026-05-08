@@ -18,6 +18,9 @@ pandas==3.0.2
  
 # HTTP requests (Discord webhook calls)
 requests==2.33.1
+
+#AI-Agent analyst 
+openai==1.82.0 
  
 # Technical indicators (RSI, MACD, Bollinger Bands, etc.)
 ta==0.11.0
