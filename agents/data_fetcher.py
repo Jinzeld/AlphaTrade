@@ -1,25 +1,20 @@
 import yfinance as yf
 import pandas as pd
-from alpaca.data.historical import StockHistoricalDataClient
-from alpaca.data.requests import StockBarsRequest
-from alpaca.data.timeframe import TimeFrame
-from config import ALPACA_KEY, ALPACA_SECRET
+from utils.logger import logger
 
-_alpaca_client = StockHistoricalDataClient(ALPACA_KEY, ALPACA_SECRET)
 
-def get_candles(ticker: str, period="5d", interval="1h") -> pd.DataFrame:
+def get_candles(ticker: str, period: str = "1y", interval: str = "1d") -> pd.DataFrame:
+    """
+    Pull daily candles — 1 year so the 200 EMA has
+    enough history to be accurate from day one.
+    """
     try:
-        request = StockBarsRequest(
-            symbol_or_symbols=ticker,
-            timeframe=TimeFrame.Hour,
-            limit=120
-        )
-        bars = _alpaca_client.get_stock_bars(request).df
-        bars = bars.reset_index(level=0, drop=True)  # drop symbol from index
-        bars.columns = [c.capitalize() for c in bars.columns]
-        return bars
-    except Exception as e:
-        print(f"[WARN] Alpaca fetch failed for {ticker}, falling back to yfinance: {e}")
         df = yf.download(ticker, period=period, interval=interval, progress=False)
         df.dropna(inplace=True)
+        if isinstance(df.columns, pd.MultiIndex):
+            df.columns = df.columns.get_level_values(0)
+        logger.info(f"[DATA] Fetched {len(df)} candles for {ticker}")
         return df
+    except Exception as e:
+        logger.error(f"[DATA] Failed to fetch candles for {ticker}: {e}")
+        return pd.DataFrame()
