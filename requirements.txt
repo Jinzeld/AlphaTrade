@@ -1,0 +1,23 @@
+# ── Trading Bot Requirements ──────────────────────────────────────────────────
+# Install with: pip install -r requirements.txt
+ 
+# Alpaca trading & market data API
+alpaca-py==0.43.4
+ 
+# Load credentials from .env file
+python-dotenv==1.2.2
+ 
+# Market data fallback (stocks, ETFs)
+yfinance==1.3.0
+ 
+# Data manipulation & analysis
+pandas==3.0.2
+ 
+# HTTP requests (Discord webhook calls)
+requests==2.33.1
+ 
+# Technical indicators (RSI, MACD, Bollinger Bands, etc.)
+ta==0.11.0
+ 
+# Scheduler - runs the bot at 6:30am PST every day
+APScheduler==3.10.4
