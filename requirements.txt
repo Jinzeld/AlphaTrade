@@ -3,7 +3,10 @@
  
 # Alpaca trading & market data API
 alpaca-py==0.43.4
- 
+
+# Discord bot
+discord.py==2.7.1
+
 # Load credentials from .env file
 python-dotenv==1.2.2
  
