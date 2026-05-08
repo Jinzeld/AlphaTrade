@@ -3,34 +3,43 @@ import os
 
 load_dotenv()
 
-ALPACA_KEY      = os.getenv("ALPACA_KEY")
-ALPACA_SECRET   = os.getenv("ALPACA_SECRET")
-DISCORD_WEBHOOK = os.getenv("DISCORD_WEBHOOK")
-IS_PAPER        = os.getenv("IS_PAPER", "True") == "True"
+# ── Credentials ───────────────────────────────────────────────────────────────
+ALPACA_KEY       = os.getenv("ALPACA_KEY")
+ALPACA_SECRET    = os.getenv("ALPACA_SECRET")
+DISCORD_WEBHOOK  = os.getenv("DISCORD_WEBHOOK")
+DISCORD_TOKEN    = os.getenv("DISCORD_TOKEN")
+DISCORD_CHANNEL  = int(os.getenv("DISCORD_CHANNEL_ID", "0"))
+IS_PAPER         = os.getenv("IS_PAPER", "True") == "True"
 
-# tickers you want scanned every morning
-WATCHLIST = ["AAPL", "TSLA", "NVDA", "SPY", "AMD"]
+# ── Strategy thresholds ───────────────────────────────────────────────────────
+RSI_OVERSOLD     = 35
+RSI_OVERBOUGHT   = 65
+EMA_FAST         = 9
+EMA_SLOW         = 21
+EMA_TREND        = 200
 
-TIMEFRAME                = "1h"
-CHECK_INTERVAL_SECONDS   = 300
+# ── Options config ────────────────────────────────────────────────────────────
+OPTION_MIN_VOLUME      = 100
+OPTION_MIN_OI          = 200
+OPTION_0DTE_DAYS       = 1     # same-day expiry
+OPTION_SWING_DAYS      = 21    # up to 3 weeks out for swing
 
-# strategy thresholds
-RSI_OVERSOLD    = 35
-RSI_OVERBOUGHT  = 65
-EMA_FAST        = 9
-EMA_SLOW        = 21
-EMA_TREND       = 200
+# ── Risk score weights ────────────────────────────────────────────────────────
+# Each factor adds to the risk score (0 = safest, 10 = riskiest)
+RISK_WEIGHTS = {
+    "rsi_extreme":      2,   # RSI very extreme (below 25 or above 75)
+    "no_trend_confirm": 2,   # price not clearly above/below 200 EMA
+    "low_volume":       2,   # option volume below threshold
+    "high_iv":          2,   # implied volatility above 60%
+    "0dte":             2,   # zero DTE is inherently higher risk
+}
 
-# options config
-OPTION_MIN_VOLUME       = 100     # ignore options with low volume
-OPTION_MIN_OI           = 200     # open interest minimum
-OPTION_MAX_EXPIRY_DAYS  = 14      # only look at options expiring within 14 days
-
+# ── Required env check ────────────────────────────────────────────────────────
 _required = {
     "ALPACA_KEY":      ALPACA_KEY,
     "ALPACA_SECRET":   ALPACA_SECRET,
-    "DISCORD_WEBHOOK": DISCORD_WEBHOOK,
+    "DISCORD_TOKEN":   DISCORD_TOKEN,
 }
 for name, val in _required.items():
     if not val:
-        raise EnvironmentError(f"Missing required env variable: {name}")
+        raise EnvironmentError(f"[CONFIG] Missing required env variable: {name}")
