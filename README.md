@@ -27,3 +27,4 @@ AI agent powered trade bot
 ```
 ## Structure Visual Diagram
 
+<img width="729" height="615" alt="image" src="https://github.com/user-attachments/assets/bbcacd5a-c398-4b0b-aff5-02fb4e344194" />
