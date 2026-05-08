@@ -21,6 +21,9 @@ requests==2.33.1
  
 # Technical indicators (RSI, MACD, Bollinger Bands, etc.)
 ta==0.11.0
+
+# Daily new report
+finnhub-python==2.4.20
  
 # Scheduler - runs the bot at 6:30am PST every day
 APScheduler==3.10.4
