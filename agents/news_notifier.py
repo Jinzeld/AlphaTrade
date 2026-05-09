@@ -4,6 +4,7 @@ from datetime import datetime
 import config
 from agents.news_fetcher import get_ticker_news, get_general_market_news
 from utils.logger import logger
+from agents.ai_analyst import summarize_news
 
 
 def _truncate(text: str, limit: int = 100) -> str:
@@ -64,7 +65,12 @@ async def send_daily_news(bot: discord.Client, watchlist: set[str]):
             if not articles:
                 await channel.send(f"**${ticker}** — No news found today.")
                 continue
-
+            
+            # get AI summary
+            summary = await loop.run_in_executor(
+                None, lambda t=ticker, a=articles: summarize_news(t, a)
+            )
+            
             # header for this ticker
             await channel.send(f"\n**${ticker}** — {len(articles)} article(s)")
 
