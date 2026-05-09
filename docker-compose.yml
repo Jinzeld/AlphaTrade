@@ -1,0 +1,14 @@
+version: "3.9"
+
+services:
+  trading-bot:
+    build: .
+    container_name: trading-bot
+    restart: unless-stopped          # auto-restarts if it crashes
+    env_file:
+      - .env                         # loads all your credentials
+    volumes:
+      - ./logs:/app/logs             # saves logs to your machine
+      - ./data:/app/data             # saves watchlist to your machine
+    environment:
+      - TZ=America/Los_Angeles       # keeps PST scheduling correct
