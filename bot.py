@@ -15,6 +15,7 @@ from agents.news_conviction   import analyze_news_conviction
 from agents.ai_analyst        import analyze_trade
 from agents.signal_filter     import is_new_signal, clear_signals
 from agents.watchlist_manager import load_watchlists, save_watchlists, clear_watchlists
+from agents.longterm_notifier import run_longterm_scan
 
 # ── Shared state — loaded from disk on startup ─────────────────────────────
 watchlist_0dte,  watchlist_swing = load_watchlists()
@@ -120,8 +121,22 @@ async def run_full_scan(trade_type: str, log_channel: discord.TextChannel):
         await asyncio.sleep(1)
 
     await log_channel.send(f"✅ `{trade_type.upper()}` scan complete.")
-
-
+    
+@tree.command(name="set-market-cap", description="Set minimum market cap filter for long-term scan")
+@app_commands.choices(size=[
+    app_commands.Choice(name="Small", value="Small"),
+    app_commands.Choice(name="Mid",   value="Mid"),
+    app_commands.Choice(name="Large", value="Large"),
+    app_commands.Choice(name="Mega",  value="Mega"),
+])
+async def set_market_cap(interaction: discord.Interaction, size: str):
+    if not is_settings_channel(interaction):
+        return await wrong_channel_reply(interaction)
+    config.FINVIZ_MIN_MARKET_CAP = size
+    await interaction.response.send_message(
+        f"✅ Long-term scan market cap set to **{size} Cap**.\n"
+        f"Applies automatically at next 7:00am scan."
+    )
 # ══════════════════════════════════════════════════════════════════════════════
 #  Settings panel
 # ══════════════════════════════════════════════════════════════════════════════

@@ -20,6 +20,13 @@ IS_PAPER              = os.getenv("IS_PAPER", "True") == "True"
 DISCORD_0DTE_CHANNEL     = int(os.getenv("DISCORD_0DTE_CHANNEL_ID", "0"))
 DISCORD_SWING_CHANNEL    = int(os.getenv("DISCORD_SWING_CHANNEL_ID", "0"))
 DISCORD_SETTINGS_CHANNEL = int(os.getenv("DISCORD_SETTINGS_CHANNEL_ID", "0"))
+DISCORD_LONGTERM_CHANNEL = int(os.getenv("DISCORD_LONGTERMCHANNEL_ID", "0"))
+
+# ── Finviz long term screener ─────────────────────────────────────────────────
+FINVIZ_TOP_N              = 10    # how many oversold stocks to analyze
+FINVIZ_MIN_MARKET_CAP     = "Mid"  # Small / Mid / Large / Mega
+FINVIZ_LONGTERM_HOUR      = 7     # runs at 7:00am PST daily
+FINVIZ_LONGTERM_MINUTE    = 0
 
 # ── Strategy thresholds ───────────────────────────────────────────────────────
 RSI_OVERSOLD          = 35
