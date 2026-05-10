@@ -26,7 +26,7 @@ def get_oversold_stocks() -> list[dict]:
         logger.info("[FINVIZ] Running oversold screener...")
 
         tech = Technical()
-        tech.set_filter(signal="ta_oversold", filters_dict={
+        tech.set_filter(signal="Oversold", filters_dict={
             "Market Cap":    config.FINVIZ_MIN_MARKET_CAP,
             "Country":       "USA",
         })
