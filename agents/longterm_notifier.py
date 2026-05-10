@@ -12,35 +12,44 @@ def _risk_bar(score_label: str) -> str:
     return bars.get(score_label, "░░░░░░░░░░")
 
 
-async def run_longterm_scan(bot: discord.Client):
+async def run_longterm_scan(bot: discord.Client, triggered_by: str = "auto"):
     """
-    Runs automatically every morning at 7:00am PST.
-    Only posts to #long-term-picks if a STRONG BUY is found.
-    No message at all if nothing qualifies — keeps the channel clean.
+    triggered_by: "auto" (scheduled) or "manual" (button press)
+    Only posts to #long-term-picks if STRONG BUY stocks are found.
     """
     channel = bot.get_channel(config.DISCORD_LONGTERM_CHANNEL)
     if channel is None:
         logger.error(f"[LONGTERM] Channel {config.DISCORD_LONGTERM_CHANNEL} not found")
         return
 
-    today = datetime.now().strftime("%A, %B %d %Y")
-    loop  = asyncio.get_event_loop()
+    today    = datetime.now().strftime("%A, %B %d %Y")
+    loop     = asyncio.get_event_loop()
+    trigger_label = "🕐 Scheduled Daily Scan" if triggered_by == "auto" else "👆 Manual Scan"
 
-    logger.info("[LONGTERM] Starting oversold scan...")
+    logger.info(f"[LONGTERM] Starting scan ({triggered_by})...")
 
-    # step 1 — pull oversold stocks from finviz
+    # notify channel that scan is running (only for manual)
+    if triggered_by == "manual":
+        await channel.send(
+            f"🔍 **Manual scan triggered** — scanning Finviz for RSI < 30 stocks..."
+        )
+
     stocks = await loop.run_in_executor(None, get_oversold_stocks)
 
     if not stocks:
-        logger.info("[LONGTERM] No oversold stocks found today — skipping")
+        logger.info("[LONGTERM] No RSI < 30 stocks found — skipping")
+        if triggered_by == "manual":
+            await channel.send(
+                "📭 No stocks with RSI under 30 found right now. "
+                "Market may not have any deeply oversold opportunities today."
+            )
         return
 
     logger.info(f"[LONGTERM] Analyzing {len(stocks)} stocks with NIM...")
 
-    strong_buys = []
+    strong_buys  = []
     all_analyzed = []
 
-    # step 2 — analyze every stock silently in the background
     for stock in stocks:
         analysis = await loop.run_in_executor(
             None, lambda s=stock: analyze_longterm_stock(s)
@@ -52,7 +61,6 @@ async def run_longterm_scan(bot: discord.Client):
             "analysis": analysis,
         })
 
-        # collect only strong buys
         if analysis["verdict"] == "STRONG BUY":
             strong_buys.append({
                 "ticker":   stock["ticker"],
@@ -62,21 +70,28 @@ async def run_longterm_scan(bot: discord.Client):
 
         await asyncio.sleep(0.5)
 
-    # step 3 — if nothing is a strong buy, stay silent
     if not strong_buys:
-        logger.info("[LONGTERM] No STRONG BUY stocks found today — no message sent")
+        logger.info("[LONGTERM] No STRONG BUY found — no message sent")
+        if triggered_by == "manual":
+            verdicts = [a["analysis"]["verdict"] for a in all_analyzed]
+            summary  = ", ".join([f"{v}" for v in verdicts])
+            await channel.send(
+                f"📊 Scanned {len(stocks)} RSI < 30 stocks — no STRONG BUY found today.\n"
+                f"Verdicts: `{summary}`"
+            )
         return
 
-    # step 4 — only now post to Discord since we have something worth sending
+    # post the header
     await channel.send(
         f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
         f"🔥 **Long-Term Strong Buy Alert — {today}**\n"
-        f"Found **{len(strong_buys)}** STRONG BUY stock(s) "
-        f"from {len(stocks)} oversold today\n"
+        f"📊 {trigger_label}\n"
+        f"Found **{len(strong_buys)} STRONG BUY** from "
+        f"{len(stocks)} stocks with RSI < 30\n"
         f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
     )
 
-    # step 5 — post each strong buy card
+    # post each strong buy card
     for item in strong_buys:
         stock    = item["stock"]
         analysis = item["analysis"]
@@ -94,7 +109,7 @@ async def run_longterm_scan(bot: discord.Client):
             f"━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
             f"🏢 {stock['company']} | {stock['sector']}\n"
             f"💰 Price:           `${stock['price']}` ({stock['change']} today)\n"
-            f"📊 RSI:             `{stock['rsi']}` ← oversold\n"
+            f"📊 RSI:             `{stock['rsi']}` ← under 30\n"
             f"📈 Analyst Target:  `${analysis['target_price']}` "
             f"({analysis['upside_pct']} upside)\n"
             f"⏱️ Hold Period:     `{analysis['time_horizon']}`\n"
@@ -110,7 +125,7 @@ async def run_longterm_scan(bot: discord.Client):
 
         await asyncio.sleep(0.5)
 
-    # step 6 — post portfolio summary only if multiple strong buys
+    # portfolio summary if multiple strong buys
     if len(strong_buys) > 1:
         summary = await loop.run_in_executor(
             None, lambda: rank_longterm_picks(all_analyzed)
@@ -122,6 +137,6 @@ async def run_longterm_scan(bot: discord.Client):
         )
 
     logger.info(
-        f"[LONGTERM] Done — {len(strong_buys)} STRONG BUY(s) posted "
-        f"out of {len(stocks)} scanned"
+        f"[LONGTERM] Done — {len(strong_buys)} STRONG BUY(s) "
+        f"from {len(stocks)} scanned ({triggered_by})"
     )
