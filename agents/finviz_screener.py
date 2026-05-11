@@ -40,11 +40,11 @@ def get_oversold_stocks() -> list[dict]:
         # convert RSI to numeric and filter under 30
         if "RSI" in df.columns:
             df["RSI"] = pd.to_numeric(df["RSI"], errors="coerce")
-            df = df[df["RSI"] < 30]
+            df = df[df["RSI"] <= 25]
             df = df.sort_values("RSI", ascending=True)
 
         if df.empty:
-            logger.info("[FINVIZ] No stocks with RSI < 30 found today")
+            logger.info("[FINVIZ] No stocks with RSI <= 30 found today")
             return []
 
         df = df.head(config.FINVIZ_TOP_N)

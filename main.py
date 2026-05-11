@@ -97,7 +97,7 @@ async def run_on_startup(bot: discord.Client):
 
     # run all three at the same time
     await asyncio.gather(
-        send_daily_news(bot, watchlist_0dte | watchlist_swing),
+       # send_daily_news(bot, watchlist_0dte | watchlist_swing),
         run_longterm_scan(bot),
     )
 
