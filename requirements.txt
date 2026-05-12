@@ -33,3 +33,9 @@ finvizfinance==1.3.0
  
 # Scheduler - runs the bot at 6:30am PST every day
 APScheduler==3.10.4
+
+# Hidden Markov Models
+hmmlearn==0.3.3
+
+#  algorithms analysis
+scipy==1.15.3
