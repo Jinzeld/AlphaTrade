@@ -7,8 +7,26 @@ def calculate_risk(
     setup:            dict,
     option:           dict | None,
     trade_type:       str,
-    news_conviction:  dict | None = None,   # ← new
+    news_conviction:  dict | None = None, 
+     regime:          dict | None = None, 
 ) -> dict:
+    
+    # ── Regime risk adjustment ────────────────────────────────────
+    if regime:
+        adjustment = regime.get("risk_adjustment", 0)
+        score      = score + adjustment
+
+        if adjustment > 0:
+            factors.append(
+                f"Regime: `{regime['regime']}` adds +{adjustment} risk "
+                f"(VIX: {regime['vix']})"
+            )
+        elif adjustment < 0:
+            factors.append(
+                f"Regime: `{regime['regime']}` reduces risk by {abs(adjustment)} "
+                f"— favorable market conditions"
+            )
+
     score   = 0
     factors = []
 
