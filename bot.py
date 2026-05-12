@@ -17,6 +17,7 @@ from agents.signal_filter     import is_new_signal, clear_signals
 from agents.watchlist_manager import load_watchlists, save_watchlists, clear_watchlists
 from agents.longterm_notifier import run_longterm_scan
 from agents.news_notifier     import send_daily_news
+from agents.regime_detector   import detect_regime
 
 # ── Shared state — loaded from disk on startup ─────────────────────────────
 watchlist_0dte, watchlist_swing = load_watchlists()
@@ -52,6 +53,7 @@ async def run_scan_for_ticker(
     ticker:      str,
     trade_type:  str,
     log_channel: discord.TextChannel | None = None,
+    regime=None
 ):
     ticker = ticker.upper()
 
@@ -97,6 +99,11 @@ async def run_scan_for_ticker(
         None, lambda: analyze_trade(ticker, analysis, setup, option, risk, trade_type, news)
     )
 
+    setup = await loop.run_in_executor(
+    None, lambda: check_setup(analysis, regime)
+    )
+    risk = calculate_risk(analysis, setup, option, trade_type, news_conviction, regime)
+
     send_alert(ticker, setup, analysis, option, risk, trade_type, ai_analysis, news_conviction)
     await status_ch.send(f"✅ Signal posted to <#{out_channel.id}> for **{ticker}**")
 
@@ -111,6 +118,36 @@ async def run_full_scan(trade_type: str, log_channel: discord.TextChannel | None
                 f"Add some with `/add-0dte AAPL` or `/add-swing AAPL`"
             )
         return
+    
+    loop = asyncio.get_event_loop()
+
+    # detect regime ONCE before scanning all tickers
+    if log_channel:
+        await log_channel.send("🔭 Detecting market regime...")
+
+    regime = await loop.run_in_executor(None, detect_regime)
+
+    if log_channel:
+        await log_channel.send(
+            f"{regime['regime_emoji']} **Market Regime: `{regime['regime']}`** "
+            f"({regime['confidence']} confidence)\n"
+            f"> {regime['description']}\n"
+            f"✅ Allowed strategies: "
+            f"`{'`, `'.join(regime['allowed_strategies']) or 'NONE — market too risky'}`"
+        )
+
+    # if high volatility skip everything
+    if regime["regime"] == "HIGH VOLATILITY":
+        if log_channel:
+            await log_channel.send(
+                "⚡ **HIGH VOLATILITY regime — all trade signals blocked.**\n"
+                "VIX is too elevated. Waiting for calmer conditions."
+            )
+        return
+
+    for ticker in sorted(watchlist):
+        await run_scan_for_ticker(ticker, trade_type, log_channel, regime)
+        await asyncio.sleep(1)
 
     out_id = (
         config.DISCORD_0DTE_CHANNEL if trade_type == "0dte"
