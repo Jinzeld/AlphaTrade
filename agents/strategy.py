@@ -172,6 +172,16 @@ def check_setup(data: dict) -> dict | None:
     """
     if data is None:
         return None
+    
+        # which strategies are allowed in this regime
+        allowed = regime["allowed_strategies"] if regime else [
+            "MOMENTUM BREAKOUT", "MEAN REVERSION", "TREND FOLLOWING"
+        ]
+
+        # if high volatility regime — block all signals
+        if regime and regime["regime"] == "HIGH VOLATILITY":
+            logger.info("[STRATEGY] HIGH VOLATILITY regime — all signals blocked")
+            return None
 
     results = []
 
