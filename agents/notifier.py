@@ -18,6 +18,7 @@ def send_alert(
     trade_type:      str,
     ai_analysis:     str  = "",
     news_conviction: dict | None = None,
+    regime:          dict | None = None
 ):
     action     = setup["action"]
     conviction = setup["conviction"]
@@ -53,6 +54,15 @@ def send_alert(
     macd_hist   = analysis.get("macd_hist", 0)
     macd_arrow  = "↑" if macd_hist > 0 else "↓"
     macd_color  = "🟢" if macd_hist > 0 else "🔴"
+
+    # ── regime block ─────────────────────────────────────────────
+    if regime:
+        regime_block = (
+            f"\n{regime['regime_emoji']} **Market Regime: `{regime['regime']}`** "
+            f"| VIX: `{regime['vix'] or 'N/A'}`\n"
+        )
+    else:
+        regime_block = ""
 
     # ── Options block ─────────────────────────────────────────────
     if option and "error" not in option:
